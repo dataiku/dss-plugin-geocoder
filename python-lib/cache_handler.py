@@ -29,3 +29,8 @@ class CacheHandler(Cache):
         if self._enabled:
             return super(CacheHandler, self).__getitem__(key)
         raise KeyError(key)
+
+    def __enter__(self, *args, **kwargs):
+        if self._enabled:
+            super(CacheHandler, self).__enter__(*args, **kwargs)
+        return self
