@@ -88,12 +88,14 @@ def perform_geocode(df, config, fun, cache):
 
     except KeyError:
         try:
+            print("ALX:address={}".format(address))
             out = fun(address)
+            print("ALX:out={}".format(out))
             if not out.latlng:
                 raise DataikuException('Failed to retrieve coordinates')
 
             cache[address] = res = out.latlng
-        except DataikuException as e:
+        except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (address, e))
 
     return res
