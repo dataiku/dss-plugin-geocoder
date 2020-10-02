@@ -2,7 +2,6 @@
 
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
-from dataikuapi.utils import DataikuException
 from cache_handler import CacheHandler
 
 import geocoder
@@ -90,10 +89,10 @@ def perform_geocode(df, config, fun, cache):
         try:
             out = fun(address)
             if not out.latlng:
-                raise DataikuException('Failed to retrieve coordinates')
+                raise Exception('Failed to retrieve coordinates')
 
             cache[address] = res = out.latlng
-        except DataikuException as e:
+        except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (address, e))
 
     return res
