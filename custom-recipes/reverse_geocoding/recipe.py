@@ -13,12 +13,8 @@ import sys
 # Logging setup
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-# Fix Python 3.x.
-try:
-    UNICODE_EXISTS = bool(type(unicode))
-    def encode(val): return val.encode('utf-8', 'ignore') if val and type(val) == unicode else val
-except NameError:
-    def encode(val): return val
+
+def encode(val): return val
 
 
 def get_config():
