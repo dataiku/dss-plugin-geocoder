@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 import logging
@@ -18,8 +17,7 @@ class CustomTmpFile(object):
 
     def get_cache_location_from_user_config(self):
         """
-        Get the cache location for temporary files creation, the target cache location will be associated
-        with the user id that is launching the export
+        Return a per user cache location that is UIF safe
         :return: absolute location of cache
         """
         home_dir = pwd.getpwuid(os.getuid()).pw_dir
@@ -28,31 +26,33 @@ class CustomTmpFile(object):
             os.makedirs(cache_absolute_dir)
         return cache_absolute_dir
 
-    def get_temporary_cache_file(self, output_file_name):
-        """
-        Return the path the temporary file in memory
-        :param output_file_name:
-        :return:
-        """
-        logger.info("Call to open method in upload exporter ...")
-        cache_absolute_path = self.get_cache_location_from_user_config()
-        # Create a random file path for the temporary write
-        self.tmp_output_dir = tempfile.TemporaryDirectory(dir=cache_absolute_path)
-        output_file = os.path.join(self.tmp_output_dir.name, output_file_name)
-        return output_file
-
     def get_temporary_cache_dir(self):
         """
-        Return the path the temporary dir
+        Return a temporary directory with random name, output path will be:
+
+            per_uid_cache_dir/random_dir/
+
         :return:
         """
-        logger.info("Call to open method in upload exporter ...")
         cache_absolute_path = self.get_cache_location_from_user_config()
-        # Create a random file path for the temporary write
         self.tmp_output_dir = tempfile.TemporaryDirectory(dir=cache_absolute_path)
         return self.tmp_output_dir
 
-    def destroy_cache(self):
+    def get_temporary_cache_file(self, output_file_name):
+        """
+        Return temporary file in cache with name `ouput_file_name`,
+        the structure of the directory will be the following:
+
+            per_uid_cache_dir/random_dir/output_file_name
+
+        :param output_file_name:
+        :return:
+        """
+        in_cache_random_dir = self.get_temporary_cache_dir()
+        output_file = os.path.join(in_cache_random_dir.name, output_file_name)
+        return output_file
+
+    def clean(self):
         """
         Remove cache
         :return:

@@ -1,35 +1,49 @@
 # -*- coding: utf-8 -*-
 
-from dku_io import get_config
-from dataframe_geocoding import get_geocode_function, geocode_processor
-
-from cache_handler import CacheHandler
-
+import dataiku
 import logging
+import shutil
+
+from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role
+from dataiku.customrecipe import get_plugin_config, get_recipe_config
+from cache_handler import CacheHandler
+from dataframe_reverse_geocoding import add_reverse_geocode_columns
+from dataframe_reverse_geocoding import get_reverse_geocode_function
+from dku_io import get_config_reverse_geocoding
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Plugin: Geocoder | %(levelname)s - %(message)s')
 
-config = get_config()
+# Retrieve configuration
+input_dataset = dataiku.Dataset(get_input_names_for_role('input_ds')[0])
+output_dataset = dataiku.Dataset(get_output_names_for_role('output_ds')[0])
 
-from cache_utils import CustomTmpFile
-tmp_cache = CustomTmpFile()
-config['cache_location'] = tmp_cache.get_temporary_cache_dir()
+recipe_config = get_recipe_config()
+plugin_config = get_plugin_config()
 
-geocode_function = get_geocode_function(config)
-
-input_dataset = config['input_ds']
-output_dataset = config['output_ds']
+config = get_config_reverse_geocoding(recipe_config=recipe_config, plugin_config=plugin_config)
+geocode_function = get_reverse_geocode_function(config)
 
 writer = None
 
-with CacheHandler(config['cache_location'], enabled=config['cache_enabled'], size_limit=config['cache_size'], eviction_policy=config['cache_eviction']) as cache:
+with CacheHandler(config['cache_location'], enabled=config['cache_enabled'], size_limit=config['cache_size'],
+                  eviction_policy=config['cache_eviction']) as cache:
     for current_df in input_dataset.iter_dataframes(chunksize=max(10000, config['batch_size'])):
-        current_df = geocode_processor(cache, config, current_df, geocode_function)
+        current_df = add_reverse_geocode_columns(cache, config, current_df, geocode_function)
+        # First loop, we write the schema before creating the dataset writer
         if writer is None:
-            config['output_ds'].write_schema_from_dataframe(current_df)
+            output_dataset.write_schema_from_dataframe(current_df)
             writer = output_dataset.get_writer()
         writer.write_dataframe(current_df)
 
 if writer is not None:
     writer.close()
+
+if recipe_config['cache_enabled']:
+    # Delete cache location after job
+    if config['using_default_cache']:
+        tmp_cache = config['cache_handler']
+        tmp_cache.clean()
+    else:
+        shutil.rmtree(plugin_config['cache_location_custom'])

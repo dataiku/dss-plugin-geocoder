@@ -1,83 +1,109 @@
-import dataiku
+# -*- coding: utf-8 -*-
 
-from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
-import os
+import logging
 
 from cache_utils import CustomTmpFile
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='Plugin: Geocoder | %(levelname)s - %(message)s')
 
-def get_config_forward():
-    config = {'input_ds': dataiku.Dataset(get_input_names_for_role('input_ds')[0]),
-              'output_ds': dataiku.Dataset(get_output_names_for_role('output_ds')[0])}
 
+def get_config_forward_geocoding(plugin_config, recipe_config):
+    """
+    Retrieve and process the input configuration to determine the geocoding service provider, cache settings and
+    names of result columns headers for forward geocoding
+    :return:
+    """
+    processed_config = {}
     for param in ['address_column', 'cache_enabled', 'provider', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
-        config[param] = get_recipe_config().get(param, None)
+        processed_config[param] = recipe_config.get(param, None)
 
-    config['batch_enabled'] = get_recipe_config().get('batch_enabled', False) \
-        and (config['provider'] == 'bing' or config['provider'] == 'mapquest' or config['provider'] == 'uscensus')
+    processed_config['batch_enabled'] = recipe_config.get('batch_enabled', False) \
+                                        and (processed_config['provider'] == 'bing' or processed_config['provider'] == 'mapquest' or processed_config['provider'] == 'uscensus')
 
-    config['batch_size'] = {
-        'bing': get_recipe_config().get('batch_size_bing', 50),
+    processed_config['batch_size'] = {
+        'bing': recipe_config.get('batch_size_bing', 50),
         'mapquest': 100,
-        'uscensus': get_recipe_config().get('batch_size_uscensus', 1000)
-    }.get(config['provider'], 0)
+        'uscensus': recipe_config.get('batch_size_uscensus', 1000)
+    }.get(processed_config['provider'], 0)
 
-    config['batch_timeout'] = {
+    processed_config['batch_timeout'] = {
         'bing': 10,
         'mapquest': 30,
         'uscensus': 1800
-    }.get(config['provider'], 0)
+    }.get(processed_config['provider'], 0)
 
-    if get_plugin_config().get('cache_location', 'original') == 'original':
+    if plugin_config.get('cache_location', 'original') == 'original':
+        # Detect an empty cache_location in the user settings
+        # Will use the UIF safe cache location by default
         tmp_cache = CustomTmpFile()
-        config['cache_location'] = tmp_cache.get_temporary_cache_dir()
+        processed_config['using_default_cache'] = True
+        processed_config['cache_handler'] = tmp_cache
+        in_cache_random_dir = tmp_cache.get_temporary_cache_dir().name
+        processed_config['cache_location'] = in_cache_random_dir
+        logger.info("Using default cache at location {}".format(in_cache_random_dir))
     else:
-        config['cache_location'] = get_plugin_config().get('cache_location_custom', '')
+        processed_config['using_default_cache'] = False
+        processed_config['cache_location'] = plugin_config.get('cache_location_custom', '')
+        logger.info("Using custom cache location {}".format(processed_config['cache_location']))
 
-    config['cache_size'] = get_plugin_config().get('forward_cache_size', 1000) * 1000
-    config['cache_eviction'] = get_plugin_config().get('forward_cache_policy', 'least-recently-stored')
+    processed_config['cache_size'] = plugin_config.get('forward_cache_size', 1000) * 1000
+    processed_config['cache_eviction'] = plugin_config.get('forward_cache_policy', 'least-recently-stored')
 
-    prefix = get_recipe_config().get('column_prefix', '')
+    prefix = recipe_config.get('column_prefix', '')
     for column_name in ['latitude', 'longitude']:
-        config[column_name] = prefix + column_name
+        processed_config[column_name] = prefix + column_name
 
-    if config['provider'] is None:
+    if processed_config['provider'] is None:
         raise AttributeError('Please select a geocoding provider.')
 
-    return config
+    return processed_config
 
 
-def get_config():
+def get_config_reverse_geocoding(plugin_config, recipe_config):
+    """
+    Retrieve and process the input configuration to determine the geocoding service provider, cache settings and
+    names of result columns headers for reverse geocoding
+    :return:
+    """
 
-    config = {'input_ds': dataiku.Dataset(get_input_names_for_role('input_ds')[0]),
-              'output_ds': dataiku.Dataset(get_output_names_for_role('output_ds')[0])}
+    processed_config = {}
 
     for param in ['lat_column', 'lng_column', 'provider', 'cache_enabled', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
-        config[param] = get_recipe_config().get(param, None)
+        processed_config[param] = recipe_config.get(param, None)
 
-    config['batch_enabled'] = get_recipe_config().get('batch_enabled', False) \
-        and (config['provider'] == 'bing')
-    config['batch_size'] = get_recipe_config().get('batch_size_bing', 50)
+    processed_config['batch_enabled'] = recipe_config.get('batch_enabled', False) \
+        and (processed_config['provider'] == 'bing')
+    processed_config['batch_size'] = recipe_config.get('batch_size_bing', 50)
 
-    config['features'] = []
-    prefix = get_recipe_config().get('column_prefix', '')
+    processed_config['features'] = []
+    prefix = recipe_config.get('column_prefix', '')
 
     for feature in ['address', 'city', 'postal', 'state', 'country']:
-        if get_recipe_config().get(feature, False):
-            config['features'].append({'name': feature, 'column': prefix + feature})
+        if recipe_config.get(feature, False):
+            processed_config['features'].append({'name': feature, 'column': prefix + feature})
 
-    if get_plugin_config().get('cache_location', 'original') == 'original':
-        config['cache_location'] = os.environ["DIP_HOME"] + '/caches/plugins/geocoder/reverse'
+    if plugin_config.get('cache_location', 'original') == 'original':
+        # Detect an empty cache_location in the user settings
+        # Will use the UIF safe cache location by default
+        tmp_cache = CustomTmpFile()
+        processed_config['using_default_cache'] = True
+        processed_config['cache_handler'] = tmp_cache
+        in_cache_random_dir = tmp_cache.get_temporary_cache_dir().name
+        processed_config['cache_location'] = in_cache_random_dir
+        logger.info("Using default cache at location {}".format(in_cache_random_dir))
     else:
-        config['cache_location'] = get_plugin_config().get('cache_location_custom', '')
+        processed_config['using_default_cache'] = False
+        processed_config['cache_location'] = plugin_config.get('cache_location_custom', '')
+        logger.info("Using custom cache location {}".format(processed_config['cache_location']))
 
-    config['cache_size'] = get_plugin_config().get('reverse_cache_size', 1000) * 1000
-    config['cache_eviction'] = get_plugin_config().get('reverse_cache_policy', 'least-recently-stored')
+    processed_config['cache_size'] = plugin_config.get('reverse_cache_size', 1000) * 1000
+    processed_config['cache_eviction'] = plugin_config.get('reverse_cache_policy', 'least-recently-stored')
 
-    if len(config['features']) == 0:
+    if len(processed_config['features']) == 0:
         raise AttributeError('Please select at least one feature to extract.')
 
-    if config['provider'] is None:
+    if processed_config['provider'] is None:
         raise AttributeError('Please select a geocoding provider.')
 
-    return config
+    return processed_config
