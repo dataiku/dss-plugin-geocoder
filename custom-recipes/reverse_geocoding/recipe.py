@@ -39,11 +39,3 @@ with CacheHandler(config['cache_location'], enabled=config['cache_enabled'], siz
 
 if writer is not None:
     writer.close()
-
-if recipe_config['cache_enabled']:
-    # Delete cache location after job
-    if config['using_default_cache']:
-        tmp_cache = config['cache_handler']
-        tmp_cache.clean()
-    else:
-        shutil.rmtree(plugin_config['cache_location_custom'])

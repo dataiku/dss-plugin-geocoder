@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from misc import is_empty
+import pdb
 
 import geocoder
 import logging
@@ -75,11 +76,13 @@ def perform_reverse_geocode(df, config, fun, cache):
     try:
         if any([is_empty(df[f['column']]) for f in config['features']]):
             res = cache[(lat, lng)]
+            print('Hit cache')
         else:
             for f in config['features']:
                 res[f['name']] = df[f['column']]
 
     except KeyError:
+        print('Missed cache')
         try:
             out = fun(lat, lng)
             if not out.address and not out.city and not out.postal and not out.state and not out.country:

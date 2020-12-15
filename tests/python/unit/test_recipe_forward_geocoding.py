@@ -31,13 +31,3 @@ def test_no_cache_small_dataset():
         delta = 1e-3
         assert abs(current_df.iloc[0]['geo_latitude'] - 48.84444) < delta
         assert abs(current_df.iloc[0]['geo_longitude'] - 2.371837) < delta
-
-    if recipe_config['cache_enabled']:
-        # Delete cache location after job
-        if config['using_default_cache']:
-            tmp_cache = config['cache_handler']
-            tmp_cache.clean()
-            cache_location = tmp_cache.tmp_output_dir.name
-            assert not os.path.isdir(cache_location)
-        else:
-            shutil.rmtree(plugin_config['cache_location_custom'])

@@ -38,10 +38,9 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
         # Will use the UIF safe cache location by default
         tmp_cache = CustomTmpFile()
         processed_config['using_default_cache'] = True
-        processed_config['cache_handler'] = tmp_cache
-        in_cache_random_dir = tmp_cache.get_temporary_cache_dir().name
-        processed_config['cache_location'] = in_cache_random_dir
-        logger.info("Using default cache at location {}".format(in_cache_random_dir))
+        persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
+        processed_config['cache_location'] = persistent_cache_location
+        logger.info("Using default cache at location {}".format(persistent_cache_location))
     else:
         processed_config['using_default_cache'] = False
         processed_config['cache_location'] = plugin_config.get('cache_location_custom', '')
@@ -88,10 +87,9 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
         # Will use the UIF safe cache location by default
         tmp_cache = CustomTmpFile()
         processed_config['using_default_cache'] = True
-        processed_config['cache_handler'] = tmp_cache
-        in_cache_random_dir = tmp_cache.get_temporary_cache_dir().name
-        processed_config['cache_location'] = in_cache_random_dir
-        logger.info("Using default cache at location {}".format(in_cache_random_dir))
+        persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
+        processed_config['cache_location'] = persistent_cache_location
+        logger.info("Using default cache at location {}".format(persistent_cache_location))
     else:
         processed_config['using_default_cache'] = False
         processed_config['cache_location'] = plugin_config.get('cache_location_custom', '')
