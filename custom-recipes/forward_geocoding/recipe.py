@@ -12,7 +12,10 @@ import sys
 
 # Logging setup
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
+project_key = dataiku.default_project_key()
+client = dataiku.api_client()
+project = client.get_project(project_key)
+dss_cache = project.get_cache()
 
 def get_config():
     config = {}
@@ -81,7 +84,10 @@ def perform_geocode(df, config, fun, cache):
 
     try:
         if any([is_empty(df[config[c]]) for c in ['latitude', 'longitude']]):
-            res = cache[address]
+            # res = cache[address]
+            res = dss_cache.get_entry(address)
+            if not res["cache_hit"]:
+                raise KeyError
         else:
             res = [df[config[c]] for c in ['latitude', 'longitude']]
 
@@ -91,7 +97,8 @@ def perform_geocode(df, config, fun, cache):
             if not out.latlng:
                 raise Exception('Failed to retrieve coordinates')
 
-            cache[address] = res = out.latlng
+            # cache[address] = res = out.latlng
+            dss_cache.set_entry(address, out.latlng)
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (address, e))
 
@@ -108,7 +115,8 @@ def perform_geocode_batch(df, config, fun, cache, batch):
     for res, orig in zip(results, batch):
         try:
             i, addr = orig
-            cache[addr] = res.latlng
+            # cache[addr] = res.latlng
+            dss_cache.set_entry(addr, res.latlng)
 
             df.loc[i, config['latitude']] = res.lat
             df.loc[i, config['longitude']] = res.lng
