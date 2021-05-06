@@ -154,7 +154,7 @@ def main():
                 current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
 
 
-            if True or config['cache_batch_enabled']:
+            if config['cache_batch_enabled']:
                 addresses = list(current_df[config['address_column']])
                 cache_resp = dss_cache.get_batch(addresses)
                 print('cache_resp', cache_resp)
