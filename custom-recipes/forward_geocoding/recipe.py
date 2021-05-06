@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
@@ -78,16 +79,12 @@ def is_empty(val):
         return not val
 
 
-def perform_geocode(df, config, fun, cache):
+def perform_geocode(df, config, fun):
     address = df[config['address_column']]
     res = [None, None]
-
     try:
         if any([is_empty(df[config[c]]) for c in ['latitude', 'longitude']]):
-            # res = cache[address]
-            res = dss_cache.get_entry(address)
-            if not res["cache_hit"]:
-                raise KeyError
+            res = dss_cache.get_entry(address) # will raise a key error if not found by the cache
         else:
             res = [df[config[c]] for c in ['latitude', 'longitude']]
 
@@ -96,8 +93,7 @@ def perform_geocode(df, config, fun, cache):
             out = fun(address)
             if not out.latlng:
                 raise Exception('Failed to retrieve coordinates')
-
-            # cache[address] = res = out.latlng
+            res = out.latlng
             dss_cache.set_entry(address, out.latlng)
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (address, e))
@@ -105,7 +101,7 @@ def perform_geocode(df, config, fun, cache):
     return res
 
 
-def perform_geocode_batch(df, config, fun, cache, batch):
+def perform_geocode_batch(df, config, fun, batch):
     results = []
     try:
         results = fun(zip(*batch)[1])
@@ -131,53 +127,50 @@ def main():
     writer = None
 
     try:
-        # Creating a fake or real cache depending on user's choice
-        with CacheHandler(config['cache_location'], enabled=config['cache_enabled'],
-                          size_limit=config['cache_size'], eviction_policy=config['cache_eviction']) as cache:
-            for current_df in config['input_ds'].iter_dataframes(chunksize=max(10000, config['batch_size'])):
-                columns = current_df.columns.tolist()
+        for current_df in config['input_ds'].iter_dataframes(chunksize=max(10000, config['batch_size'])):
+            columns = current_df.columns.tolist()
 
-                # Adding columns to the schema
-                columns_to_append = [config[c] for c in ['latitude', 'longitude'] if not config[c] in columns]
-                if columns_to_append:
-                    index = columns.index(config['address_column'])
-                    current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
+            # Adding columns to the schema
+            columns_to_append = [config[c] for c in ['latitude', 'longitude'] if not config[c] in columns]
+            if columns_to_append:
+                index = columns.index(config['address_column'])
+                current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
 
-                # Normal, 1 by 1 geocoding when batch is not enabled/available
-                if not config['batch_enabled']:
-                    current_df[config['latitude']], current_df[config['longitude']] = \
-                        zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function, cache)))
+            # Normal, 1 by 1 geocoding when batch is not enabled/available
+            if not config['batch_enabled']:
+                current_df[config['latitude']], current_df[config['longitude']] = \
+                    zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))
 
-                # Batch creation and geocoding otherwise
-                else:
-                    batch = []
+            # Batch creation and geocoding otherwise
+            else:
+                batch = []
 
-                    for i, row in current_df.iterrows():
-                        if len(batch) == config['batch_size']:
-                            perform_geocode_batch(current_df, config, geocode_function, cache, batch)
-                            batch = []
+                for i, row in current_df.iterrows():
+                    if len(batch) == config['batch_size']:
+                        perform_geocode_batch(current_df, config, geocode_function, batch)
+                        batch = []
 
-                        address = row[config['address_column']]
-                        try:
-                            if any([is_empty(row[config[c]]) for c in ['latitude', 'longitude']]):
-                                res = cache[address]
-                            else:
-                                res = [row[config[c]] for c in ['latitude', 'longitude']]
+                    address = row[config['address_column']]
+                    try:
+                        if any([is_empty(row[config[c]]) for c in ['latitude', 'longitude']]):
+                            res = dss_cache.get_entry(address)
+                        else:
+                            res = [row[config[c]] for c in ['latitude', 'longitude']]
 
-                            current_df.loc[i, config['latitude']] = res[0]
-                            current_df.loc[i, config['longitude']] = res[1]
-                        except KeyError:
-                            batch.append((i, address))
+                        current_df.loc[i, config['latitude']] = res[0]
+                        current_df.loc[i, config['longitude']] = res[1]
+                    except KeyError:
+                        batch.append((i, address))
 
-                    if len(batch) > 0:
-                        perform_geocode_batch(current_df, config, geocode_function, cache, batch)
+                if len(batch) > 0:
+                    perform_geocode_batch(current_df, config, geocode_function, batch)
 
-                # First loop, we write the schema before creating the dataset writer
-                if writer is None:
-                    config['output_ds'].write_schema_from_dataframe(current_df)
-                    writer = config['output_ds'].get_writer()
+            # First loop, we write the schema before creating the dataset writer
+            if writer is None:
+                config['output_ds'].write_schema_from_dataframe(current_df)
+                writer = config['output_ds'].get_writer()
 
-                writer.write_dataframe(current_df)
+            writer.write_dataframe(current_df)
     finally:
         if writer is not None:
             writer.close()
