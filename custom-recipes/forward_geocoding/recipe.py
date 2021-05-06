@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import json
 
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
+from cache_handler import CacheHandler
 
 import geocoder
 import numpy as np
@@ -82,181 +82,127 @@ def is_empty(val):
         return not val
 
 
-def perform_geocode(df, config, fun):
+def perform_geocode(df, config, fun, cache):
     address = df[config['address_column']]
     res = [None, None]
+
     try:
         if any([is_empty(df[config[c]]) for c in ['latitude', 'longitude']]):
-            print('if')
-            res = dss_cache.get_entry(address) # will raise a key error if not found by the cache
+            res = cache[address]
         else:
-            print('else')
             res = [df[config[c]] for c in ['latitude', 'longitude']]
 
     except KeyError:
         try:
             out = fun(address)
-            print("out", out," for ", address)
             if not out.latlng:
                 raise Exception('Failed to retrieve coordinates')
-            res = out.latlng
-            dss_cache.set_entry(address, out.latlng)
+
+            cache[address] = res = out.latlng
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (address, e))
 
     return res
 
 
-def perform_geocode_batch(df, config, fun, batch):
-    # print("batch")
+def perform_geocode_batch(df, config, fun, cache, batch):
     results = []
-    print('heyhey, ', list(zip(*batch))[1])
     try:
-        # results = fun(list(zip(*batch))[1])
         results = fun(zip(*batch)[1])
     except Exception as e:
         logging.error("Failed to geocode the following batch: %s (%s)" % (batch, e))
 
-    print('batch', batch)
     print('results', results)
     for res, orig in zip(results, batch):
         try:
             i, addr = orig
-            print('res.lat', res.lat)
-            dss_cache.set_entry(addr, res.latlng) # could do a batch write
-            # print("res")
-            # print(res)
-            # print(len(res))
+            print('res.latlng', res.latlng)
+            cache[addr] = res.latlng
+
             df.loc[i, config['latitude']] = res.lat
             df.loc[i, config['longitude']] = res.lng
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (addr, e))
-    # print("batch done")
-
 
 
 def main():
     config = get_config()
     geocode_function = get_geocode_function(config)
-    print('batch size')
-    print(config['batch_size'])
 
     writer = None
 
     try:
-        for current_df in config['input_ds'].iter_dataframes(chunksize=max(10, config['batch_size'])):
-            columns = current_df.columns.tolist()
+        # Creating a fake or real cache depending on user's choice
+        with CacheHandler(config['cache_location'], enabled=config['cache_enabled'],
+                          size_limit=config['cache_size'], eviction_policy=config['cache_eviction']) as cache:
+            for current_df in config['input_ds'].iter_dataframes(chunksize=max(10000, config['batch_size'])):
+                columns = current_df.columns.tolist()
 
-            # Adding columns to the schema
-            columns_to_append = [config[c] for c in ['latitude', 'longitude'] if not config[c] in columns]
-            if columns_to_append:
-                index = columns.index(config['address_column'])
-                current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
+                # Adding columns to the schema
+                columns_to_append = [config[c] for c in ['latitude', 'longitude'] if not config[c] in columns]
+                if columns_to_append:
+                    index = columns.index(config['address_column'])
+                    current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
+
+                if config['cache_batch_enabled']:
+                    addresses = list(current_df[config['address_column']])
+                    cache_resp = dss_cache.get_batch(addresses)
+                    print('cache_resp', cache_resp)
+                    cache_resolved = cache_resp['hits']
+                    miss_resolved = {}
+                    if True or not config['batch_enabled']:
+                        print('calling API for these adresses', cache_resp['misses'])
+                        for miss in cache_resp['misses']:
+                            out = geocode_function(miss)
+                            miss_resolved[miss] = out.latlng
+                            print(miss[:5], "=>", out.latlng)
+                    dss_cache.set_entry_batch(miss_resolved)
+                    resolved = {}
+                    resolved.update(miss_resolved)
+                    resolved.update(cache_resolved)
+                    print('resolved', resolved)
+                    for i, row in current_df.iterrows():
+                        print('writing', resolved[row[config['address_column']]])
+                        if resolved[row[config['address_column']]] is not None:
+                            current_df.loc[i, config['latitude']] = resolved[row[config['address_column']]][0]
+                            current_df.loc[i, config['longitude']] = resolved[row[config['address_column']]][1]
 
 
-            if config['cache_batch_enabled']:
-                addresses = list(current_df[config['address_column']])
-                cache_resp = dss_cache.get_batch(addresses)
-                print('cache_resp', cache_resp)
-                cache_resolved = cache_resp['hits']
-                miss_resolved = {}
-                if True or not config['batch_enabled']:
-                    print('calling API for these adresses', cache_resp['misses'])
-                    for miss in cache_resp['misses']:
-                        out = geocode_function(miss)
-                        miss_resolved[miss] = out.latlng
-                        print(miss[:5], "=>", out.latlng)
-                dss_cache.set_entry_batch(miss_resolved)
-                resolved = {}
-                resolved.update(miss_resolved)
-                resolved.update(cache_resolved)
-                print('resolved', resolved)
-                for i, row in current_df.iterrows():
-                    print('writing', resolved[row[config['address_column']]])
-                    if resolved[row[config['address_column']]] is not None:
-                        current_df.loc[i, config['latitude']] = resolved[row[config['address_column']]][0]
-                        current_df.loc[i, config['longitude']] = resolved[row[config['address_column']]][1]
+                # Normal, 1 by 1 geocoding when batch is not enabled/available
+                elif not config['batch_enabled']:
+                    current_df[config['latitude']], current_df[config['longitude']] = \
+                        zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function, cache)))
 
+                # Batch creation and geocoding otherwise
+                else:
+                    batch = []
 
-            # Normal, 1 by 1 geocoding when batch is not enabled/available
-            elif not config['batch_enabled']:
-                print(list(zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))))
-                current_df[config['latitude']], current_df[config['longitude']] = \
-                    zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))
+                    for i, row in current_df.iterrows():
+                        if len(batch) == config['batch_size']:
+                            perform_geocode_batch(current_df, config, geocode_function, cache, batch)
+                            batch = []
 
-            # Batch creation and geocoding otherwise
-            else:
-                CACHE_BATCH_SIZE = 10
-                cache_lookup_batch = []
-                batch = []
-                try:
-                    dss_cache.get_entry('test')
-                except:
-                    print("lalala")
-
-                for i, row in current_df.iterrows():
-                    if len(cache_lookup_batch) == CACHE_BATCH_SIZE:
-                        print("asking cache for")
-                        print(list(zip(*cache_lookup_batch))[1])
-                        cache_lookup = dss_cache.get_batch(list(zip(*cache_lookup_batch))[1]) # ie list of addresses
-                        misses = cache_lookup['misses']
-                        hits = cache_lookup['hits']
-                        print("cache_lookup")
-                        print(cache_lookup)
-                        print('cache lookup batch')
-                        print(cache_lookup_batch)
-                        for (l, address) in cache_lookup_batch:
-                            if address in hits:
-                                current_df.loc[l, config['latitude']] = hits[address][0]
-                                current_df.loc[l, config['longitude']] = hits[address][1]
-                            elif address in misses:
-                                batch.append((l, address))
+                        address = row[config['address_column']]
+                        try:
+                            if any([is_empty(row[config[c]]) for c in ['latitude', 'longitude']]):
+                                res = cache[address]
                             else:
-                                raise Exception("address not found in get batch cache answer : " + address)
-                        cache_lookup_batch = []
+                                res = [row[config[c]] for c in ['latitude', 'longitude']]
 
-                    print('len(batch)')
-                    print(len(batch))
-                    if len(batch) >= config['batch_size']:
-                        perform_geocode_batch(current_df, config, geocode_function, batch)
-                        batch = []
+                            current_df.loc[i, config['latitude']] = res[0]
+                            current_df.loc[i, config['longitude']] = res[1]
+                        except KeyError:
+                            batch.append((i, address))
 
-                    address = row[config['address_column']]
+                    if len(batch) > 0:
+                        perform_geocode_batch(current_df, config, geocode_function, cache, batch)
 
-                    if any([is_empty(row[config[c]]) for c in ['latitude', 'longitude']]):
-                        # if data needs to be filled
-                        cache_lookup_batch.append((i, address))
-                    else:
-                        res = [row[config[c]] for c in ['latitude', 'longitude']]
-                        # answer already filled
-                        current_df.loc[i, config['latitude']] = res[0]
-                        current_df.loc[i, config['longitude']] = res[1]
+                # First loop, we write the schema before creating the dataset writer
+                if writer is None:
+                    config['output_ds'].write_schema_from_dataframe(current_df)
+                    writer = config['output_ds'].get_writer()
 
-                if len(cache_lookup_batch) > 0:
-                    cache_lookup = dss_cache.get_batch(list(zip(*cache_lookup_batch))[1])  # ie list of addresses
-                    misses = cache_lookup['misses']
-                    hits = cache_lookup['hits']
-                    for (l, address) in cache_lookup_batch:
-                        if address in hits:
-                            print(l)
-                            print(hits[address])
-                            current_df.loc[l, config['latitude']] = hits[address][0]
-                            current_df.loc[l, config['longitude']] = hits[address][1]
-                        elif address in misses:
-                            batch.append((l, address))
-                        else:
-                            raise Exception("address not found in get batch cache answer : " + address)
-
-                if len(batch) > 0:
-                    print("last batch")
-                    perform_geocode_batch(current_df, config, geocode_function, batch)
-
-            # First loop, we write the schema before creating the dataset writer
-            if writer is None:
-                config['output_ds'].write_schema_from_dataframe(current_df)
-                writer = config['output_ds'].get_writer()
-
-            writer.write_dataframe(current_df)
+                writer.write_dataframe(current_df)
     finally:
         if writer is not None:
             writer.close()
