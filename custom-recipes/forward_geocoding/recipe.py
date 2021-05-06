@@ -3,7 +3,6 @@ import json
 
 import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
-from cache_handler import CacheHandler
 
 import geocoder
 import numpy as np
@@ -56,6 +55,10 @@ def get_config():
     if config['provider'] is None:
         raise AttributeError('Please select a geocoding provider.')
 
+    # for batch cache
+    config['cache_batch_enabled'] = get_plugin_config().get('cache_batch_enabled', False)
+    if config['cache_batch_enabled']:
+        config['batch_size'] = get_plugin_config().get('cache_batch_chunk_size')
     return config
 
 
@@ -141,7 +144,7 @@ def main():
     writer = None
 
     try:
-        for current_df in config['input_ds'].iter_dataframes(chunksize=max(10000, config['batch_size'])):
+        for current_df in config['input_ds'].iter_dataframes(chunksize=max(10, config['batch_size'])):
             columns = current_df.columns.tolist()
 
             # Adding columns to the schema
@@ -150,8 +153,33 @@ def main():
                 index = columns.index(config['address_column'])
                 current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
 
+
+            if True or config['cache_batch_enabled']:
+                addresses = list(current_df[config['address_column']])
+                cache_resp = dss_cache.get_batch(addresses)
+                print('cache_resp', cache_resp)
+                cache_resolved = cache_resp['hits']
+                miss_resolved = {}
+                if True or not config['batch_enabled']:
+                    print('calling API for these adresses', cache_resp['misses'])
+                    for miss in cache_resp['misses']:
+                        out = geocode_function(miss)
+                        miss_resolved[miss] = out.latlng
+                        print(miss[:5], "=>", out.latlng)
+                dss_cache.set_entry_batch(miss_resolved)
+                resolved = {}
+                resolved.update(miss_resolved)
+                resolved.update(cache_resolved)
+                print('resolved', resolved)
+                for i, row in current_df.iterrows():
+                    print('writing', resolved[row[config['address_column']]])
+                    if resolved[row[config['address_column']]] is not None:
+                        current_df.loc[i, config['latitude']] = resolved[row[config['address_column']]][0]
+                        current_df.loc[i, config['longitude']] = resolved[row[config['address_column']]][1]
+
+
             # Normal, 1 by 1 geocoding when batch is not enabled/available
-            if not config['batch_enabled']:
+            elif not config['batch_enabled']:
                 print(list(zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))))
                 current_df[config['latitude']], current_df[config['longitude']] = \
                     zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))

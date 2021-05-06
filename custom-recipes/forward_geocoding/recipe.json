@@ -166,6 +166,19 @@
             "defaultValue": true
         },
         {
+            "name": "cache_batch_enabled",
+            "type": "BOOLEAN",
+            "label" : "Batch cache calls",
+            "defaultValue": true
+        },
+        {
+            "name": "cache_batch_chunk_size",
+            "type": "INT",
+            "label" : "chunck size for the batch calls to the cache",
+            "description": "",
+            "defaultValue": 20
+        },
+        {
             "name": "batch_enabled",
             "type": "BOOLEAN",
             "label" : "Use batch mode",
