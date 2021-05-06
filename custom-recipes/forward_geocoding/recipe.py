@@ -84,13 +84,16 @@ def perform_geocode(df, config, fun):
     res = [None, None]
     try:
         if any([is_empty(df[config[c]]) for c in ['latitude', 'longitude']]):
+            print('if')
             res = dss_cache.get_entry(address) # will raise a key error if not found by the cache
         else:
+            print('else')
             res = [df[config[c]] for c in ['latitude', 'longitude']]
 
     except KeyError:
         try:
             out = fun(address)
+            print("out", out," for ", address)
             if not out.latlng:
                 raise Exception('Failed to retrieve coordinates')
             res = out.latlng
@@ -106,14 +109,17 @@ def perform_geocode_batch(df, config, fun, batch):
     results = []
     print('heyhey, ', list(zip(*batch))[1])
     try:
-        results = fun(list(zip(*batch))[1])
+        # results = fun(list(zip(*batch))[1])
+        results = fun(zip(*batch)[1])
     except Exception as e:
         logging.error("Failed to geocode the following batch: %s (%s)" % (batch, e))
 
-    print(batch)
+    print('batch', batch)
+    print('results', results)
     for res, orig in zip(results, batch):
         try:
             i, addr = orig
+            print('res.lat', res.lat)
             dss_cache.set_entry(addr, res.latlng) # could do a batch write
             # print("res")
             # print(res)
@@ -146,6 +152,7 @@ def main():
 
             # Normal, 1 by 1 geocoding when batch is not enabled/available
             if not config['batch_enabled']:
+                print(list(zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))))
                 current_df[config['latitude']], current_df[config['longitude']] = \
                     zip(*current_df.apply(perform_geocode, axis=1, args=(config, geocode_function)))
 
