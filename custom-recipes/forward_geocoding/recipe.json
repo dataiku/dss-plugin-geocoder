@@ -162,13 +162,13 @@
         {
             "name": "cache_enabled",
             "type": "BOOLEAN",
-            "label" : "Use cache",
+            "label" : "Use cache (diskcache)",
             "defaultValue": true
         },
         {
-            "name": "cache_batch_enabled",
+            "name": "dss_cache_batch_enabled",
             "type": "BOOLEAN",
-            "label" : "Batch cache calls",
+            "label" : "Use cache on DSS (batched calls)",
             "defaultValue": true
         },
         {
@@ -176,7 +176,8 @@
             "type": "INT",
             "label" : "chunck size for the batch calls to the cache",
             "description": "",
-            "defaultValue": 20
+            "defaultValue": 20,
+            "visibilityCondition": "model.dss_cache_batch_enabled"
         },
         {
             "name": "batch_enabled",

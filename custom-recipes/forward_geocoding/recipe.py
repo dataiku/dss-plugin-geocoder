@@ -56,8 +56,8 @@ def get_config():
         raise AttributeError('Please select a geocoding provider.')
 
     # for batch cache
-    config['cache_batch_enabled'] = get_plugin_config().get('cache_batch_enabled', False)
-    if config['cache_batch_enabled']:
+    config['dss_cache_batch_enabled'] = get_plugin_config().get('dss_cache_batch_enabled', False)
+    if config['dss_cache_batch_enabled']:
         config['batch_size'] = get_plugin_config().get('cache_batch_chunk_size')
     return config
 
@@ -144,7 +144,7 @@ def main():
                     index = columns.index(config['address_column'])
                     current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:], copy=False)
 
-                if config['cache_batch_enabled']:
+                if config['dss_cache_batch_enabled']:
                     addresses = list(current_df[config['address_column']])
                     cache_resp = dss_cache.get_batch(addresses)
                     print('cache_resp', cache_resp)
