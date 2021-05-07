@@ -56,9 +56,9 @@ def get_config():
         raise AttributeError('Please select a geocoding provider.')
 
     # for batch cache
-    config['dss_cache_batch_enabled'] = get_plugin_config().get('dss_cache_batch_enabled', False)
+    config['dss_cache_batch_enabled'] = get_recipe_config().get('dss_cache_batch_enabled')
     if config['dss_cache_batch_enabled']:
-        config['batch_size'] = get_plugin_config().get('cache_batch_chunk_size')
+        config['batch_size'] = get_recipe_config().get('cache_batch_chunk_size')
     return config
 
 
