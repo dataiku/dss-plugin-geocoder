@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from misc import is_empty
-import pdb
 
 import geocoder
 import logging
@@ -76,13 +75,13 @@ def perform_reverse_geocode(df, config, fun, cache):
     try:
         if any([is_empty(df[f['column']]) for f in config['features']]):
             res = cache[(lat, lng)]
-            print('Hit cache')
+            logging.info('Hit cache')
         else:
             for f in config['features']:
                 res[f['name']] = df[f['column']]
 
     except KeyError:
-        print('Missed cache')
+        logging.info('Missed cache')
         try:
             out = fun(lat, lng)
             if not out.address and not out.city and not out.postal and not out.state and not out.country:
@@ -90,7 +89,6 @@ def perform_reverse_geocode(df, config, fun, cache):
 
             for feature in res.keys():
                 val = getattr(out, feature)
-                print("ALX1")
                 res[feature] = val
 
             cache[(lat, lng)] = res
@@ -108,7 +106,7 @@ def perform_reverse_geocode_batch(df, config, fun, cache, batch):
 
     results = []
     try:
-        results = fun(zip(*batch)[1])
+        results = fun(list(zip(*batch))[1])
     except Exception as e:
         logging.error("Failed to geocode the following batch: %s (%s)" % (batch, e))
 
@@ -121,7 +119,6 @@ def perform_reverse_geocode_batch(df, config, fun, cache, batch):
 
             for feature in res.keys():
                 val = getattr(out, feature)
-                print("ALX2")
                 res[feature] = val
 
             i, loc = orig
@@ -132,5 +129,3 @@ def perform_reverse_geocode_batch(df, config, fun, cache, batch):
 
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % (loc, e))
-
-

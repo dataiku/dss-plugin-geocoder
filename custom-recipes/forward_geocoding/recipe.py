@@ -2,7 +2,6 @@
 
 import dataiku
 import logging
-import shutil
 
 from cache_handler import CacheHandler
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config, get_plugin_config
@@ -23,7 +22,6 @@ config = get_config_forward_geocoding(recipe_config=recipe_config, plugin_config
 geocode_function = get_forward_geocode_function(config)
 
 writer = None
-
 
 with CacheHandler(config['cache_location'], enabled=config['cache_enabled'], size_limit=config['cache_size'],
                   eviction_policy=config['cache_eviction']) as cache:

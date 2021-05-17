@@ -34,7 +34,6 @@ def add_forward_geocode_columns(cache, config, current_df, geocode_function):
     # Batch creation and geocoding otherwise
     else:
         batch = []
-
         for i, row in current_df.iterrows():
             if len(batch) == config['batch_size']:
                 perform_forward_geocode_batch(current_df, config, geocode_function, cache, batch)
@@ -113,7 +112,7 @@ def perform_forward_geocode(df, config, fun, cache):
 def perform_forward_geocode_batch(df, config, fun, cache, batch):
     results = []
     try:
-        results = fun(zip(*batch)[1])
+        results = fun(list(zip(*batch))[1])
     except Exception as e:
         logging.error("Failed to geocode the following batch: %s (%s)" % (batch, e))
 
