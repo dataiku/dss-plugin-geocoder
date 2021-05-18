@@ -11,8 +11,10 @@ logging.basicConfig(level=logging.INFO, format='Plugin: Geocoder | %(levelname)s
 
 class CustomTmpFile(object):
 
-    def __init__(self):
+    def __init__(self, sub_directory=None):
         self.cache_relative_dir = '.cache/dss/plugins/geocoder'
+        if sub_directory:
+            self.cache_relative_dir += '/{}'.format(sub_directory)
         self.tmp_output_dir = None
 
     def get_cache_location_from_user_config(self):

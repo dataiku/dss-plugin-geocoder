@@ -36,7 +36,7 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
     if plugin_config.get('cache_location', 'original') == 'original':
         # Detect an empty cache_location in the user settings
         # Will use the UIF safe cache location by default
-        tmp_cache = CustomTmpFile()
+        tmp_cache = CustomTmpFile(sub_directory="forward")
         processed_config['using_default_cache'] = True
         persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
         processed_config['cache_location'] = persistent_cache_location
@@ -85,7 +85,7 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
     if plugin_config.get('cache_location', 'original') == 'original':
         # Detect an empty cache_location in the user settings
         # Will use the UIF safe cache location by default
-        tmp_cache = CustomTmpFile()
+        tmp_cache = CustomTmpFile(sub_directory="reverse")
         processed_config['using_default_cache'] = True
         persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
         processed_config['cache_location'] = persistent_cache_location
