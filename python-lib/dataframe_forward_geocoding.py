@@ -48,7 +48,7 @@ def add_forward_geocode_columns(cache, config, current_df, geocode_function):
 
                 current_df.loc[i, config['latitude']] = res[0]
                 current_df.loc[i, config['longitude']] = res[1]
-            except KeyError:
+            except (KeyError, IndexError):
                 batch.append((i, address))
 
         if len(batch) > 0:
