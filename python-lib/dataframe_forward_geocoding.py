@@ -119,7 +119,8 @@ def perform_forward_geocode_batch(df, config, fun, cache, batch):
     for res, orig in zip(results, batch):
         try:
             i, addr = orig
-            cache[addr] = res.latlng
+            if isinstance(res.latlng, tuple) and any(res.latlng):
+                cache[addr] = res.latlng
 
             df.loc[i, config['latitude']] = res.lat
             df.loc[i, config['longitude']] = res.lng

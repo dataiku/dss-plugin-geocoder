@@ -17,7 +17,7 @@ class CustomTmpFile(object):
             self.cache_relative_dir += '/{}'.format(sub_directory)
         self.tmp_output_dir = None
 
-    def get_cache_location_from_user_config(self):
+    def get_user_home_cache_location(self):
         """
         Return a per user cache location that is UIF safe
         :return: absolute location of cache
@@ -36,23 +36,9 @@ class CustomTmpFile(object):
 
         :return:
         """
-        cache_absolute_path = self.get_cache_location_from_user_config()
+        cache_absolute_path = self.get_user_home_cache_location()
         self.tmp_output_dir = tempfile.TemporaryDirectory(dir=cache_absolute_path)
         return self.tmp_output_dir
-
-    def get_temporary_cache_file(self, output_file_name):
-        """
-        Return temporary file in cache with name `ouput_file_name`,
-        the structure of the directory will be the following:
-
-            per_uid_cache_dir/random_dir/output_file_name
-
-        :param output_file_name:
-        :return:
-        """
-        in_cache_random_dir = self.get_temporary_cache_dir()
-        output_file = os.path.join(in_cache_random_dir.name, output_file_name)
-        return output_file
 
     def clean(self):
         """

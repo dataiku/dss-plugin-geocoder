@@ -3,6 +3,8 @@
 import logging
 
 from cache_utils import CustomTmpFile
+from geocoder_constants import BATCH_FORWARD_PROVIDERS, BATCH_REVERSED_PROVIDERS
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Plugin: Geocoder | %(levelname)s - %(message)s')
@@ -18,8 +20,11 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
     for param in ['address_column', 'cache_enabled', 'provider', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
         processed_config[param] = recipe_config.get(param, None)
 
+    if processed_config['provider'] is None:
+        raise AttributeError('Please select a geocoding provider.')
+
     processed_config['batch_enabled'] = recipe_config.get('batch_enabled', False) \
-                                        and (processed_config['provider'] == 'bing' or processed_config['provider'] == 'mapquest' or processed_config['provider'] == 'uscensus')
+        and processed_config['provider'] in BATCH_FORWARD_PROVIDERS
 
     processed_config['batch_size'] = {
         'bing': recipe_config.get('batch_size_bing', 50),
@@ -38,7 +43,7 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
         # Will use the UIF safe cache location by default
         tmp_cache = CustomTmpFile(sub_directory="forward")
         processed_config['using_default_cache'] = True
-        persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
+        persistent_cache_location = tmp_cache.get_user_home_cache_location()
         processed_config['cache_location'] = persistent_cache_location
         logger.info("Using default cache at location {}".format(persistent_cache_location))
     else:
@@ -52,9 +57,6 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
     prefix = recipe_config.get('column_prefix', '')
     for column_name in ['latitude', 'longitude']:
         processed_config[column_name] = prefix + column_name
-
-    if processed_config['provider'] is None:
-        raise AttributeError('Please select a geocoding provider.')
 
     return processed_config
 
@@ -71,8 +73,11 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
     for param in ['lat_column', 'lng_column', 'provider', 'cache_enabled', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
         processed_config[param] = recipe_config.get(param, None)
 
+    if processed_config['provider'] is None:
+        raise AttributeError('Please select a geocoding provider.')
+
     processed_config['batch_enabled'] = recipe_config.get('batch_enabled', False) \
-        and (processed_config['provider'] == 'bing')
+        and processed_config['provider'] in BATCH_REVERSED_PROVIDERS
     processed_config['batch_size'] = recipe_config.get('batch_size_bing', 50)
 
     processed_config['features'] = []
@@ -87,7 +92,7 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
         # Will use the UIF safe cache location by default
         tmp_cache = CustomTmpFile(sub_directory="reverse")
         processed_config['using_default_cache'] = True
-        persistent_cache_location = tmp_cache.get_cache_location_from_user_config()
+        persistent_cache_location = tmp_cache.get_user_home_cache_location()
         processed_config['cache_location'] = persistent_cache_location
         logger.info("Using default cache at location {}".format(persistent_cache_location))
     else:
@@ -100,8 +105,5 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
 
     if len(processed_config['features']) == 0:
         raise AttributeError('Please select at least one feature to extract.')
-
-    if processed_config['provider'] is None:
-        raise AttributeError('Please select a geocoding provider.')
 
     return processed_config

@@ -84,7 +84,7 @@ def perform_reverse_geocode(df, config, fun, cache):
         logging.info('Missed cache')
         try:
             out = fun(lat, lng)
-            if not out.address and not out.city and not out.postal and not out.state and not out.country:
+            if not any([out.address, out.city, out.postal, out.state, out.country]):
                 raise Exception('Failed to retrieve coordinates')
 
             for feature in res.keys():
@@ -95,9 +95,7 @@ def perform_reverse_geocode(df, config, fun, cache):
         except Exception as e:
             logging.error("Failed to geocode %s (%s)" % ((lat, lng), e))
 
-    formatted_res = []
-    for feature in config['features']:
-        formatted_res.append(res[feature['name']])
+    formatted_res = [res[feature['name']] for feature in config['features']]
 
     return formatted_res
 
