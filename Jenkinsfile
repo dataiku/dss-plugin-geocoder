@@ -13,18 +13,18 @@ pipeline {
             sh 'echo "Done with unit tests"'
          }
       }
-//       stage('Run Integration Tests') {
-//          steps {
-//              withCredentials([string(credentialsId: 'dss-plugins-admin-api-key', variable: 'API_KEY')]) {
-//                 sh 'echo "Running integration tests"'
-//                 sh 'echo "$HOST"'
-//                 sh """
-//                    make integration-tests
-//                    """
-//                 sh 'echo "Done with integration tests"'
-//              }
-//          }
-//       }
+       stage('Run Integration Tests') {
+          steps {
+              withCredentials([string(credentialsId: 'dss-plugins-admin-api-key', variable: 'API_KEY')]) {
+                 sh 'echo "Running integration tests"'
+                 sh 'echo "$HOST"'
+                 sh """
+                    make integration-tests
+                    """
+                 sh 'echo "Done with integration tests"'
+              }
+          }
+       }
     }
    post {
      always {
