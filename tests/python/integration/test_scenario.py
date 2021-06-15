@@ -13,3 +13,6 @@ def test_forward_geocoding_osm_partition(user_dss_clients):
 
 def test_forward_geocoding_osm_sql(user_dss_clients):
     dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="forward-geocoding-osm-sql")
+
+def test_forward_geocoding_osm_partition_mock(user_dss_clients):
+    dss_scenario.run(user_dss_clients, project_key=TEST_PROJECT_KEY, scenario_id="forward-geocoding-osm-partition-mock")
