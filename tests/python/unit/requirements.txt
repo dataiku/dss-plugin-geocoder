@@ -1,0 +1,4 @@
+pytest~=6.2
+allure-pytest~=2.8
+numpy
+pandas==0.23.4
