@@ -1,11 +1,11 @@
 {
     "id": "geocoder",
-    "version": "1.1.3",
+    "version": "1.2.0",
 
     "meta": {
         "label": "Geocoder",
         "description": "Perform geocoding and reverse geocoding. Supports over 25 geocoding service providers, along with caching and batch options.",
-        "author": "Dataiku (Thomas Labadie)",
+        "author": "Dataiku (Thomas Labadie, Thibault Desfontaines)",
         "icon": "icon-globe",
         "licenseInfo": "Apache Software License",
         "url": "https://www.dataiku.com/dss/plugins/info/geocoder.html",
