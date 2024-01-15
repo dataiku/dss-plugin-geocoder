@@ -17,7 +17,7 @@
             "name": "cache_location",
             "type": "SELECT",
             "label": "Cache location",
-            "description": "The current user is the one running the recipe (if UIF is on) or DSS (else)",
+            "description": "The current user is either the one running the recipe (in UIF setting ) or DSS (in non-UIF setting)",
             "selectChoices": [
             {
                 "value": "original",
