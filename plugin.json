@@ -17,10 +17,11 @@
             "name": "cache_location",
             "type": "SELECT",
             "label": "Cache location",
+            "description": "The current user is the one running the recipe (if UIF is on) or DSS (else)",
             "selectChoices": [
             {
                 "value": "original",
-                "label": "Dataiku Data Directory"
+                "label": "Current User Home"
             },
             {
                 "value": "custom",
