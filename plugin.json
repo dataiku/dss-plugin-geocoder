@@ -17,7 +17,7 @@
             "name": "cache_location",
             "type": "SELECT",
             "label": "Cache location",
-            "description": "The current user is either the one running the recipe (in UIF setting ) or DSS (in non-UIF setting)",
+            "description": "The current user is either the one running the recipe (UIF installs ) or the one running DSS (non-UIF installs)",
             "selectChoices": [
             {
                 "value": "original",
