@@ -21,15 +21,14 @@ def add_forward_geocode_columns(cache, config, current_df, geocode_function):
     """
     columns = current_df.columns.tolist()
     # Adding columns to the schema
-    columns_to_append = [config[c] for c in ['latitude', 'longitude'] if not config[c] in columns]
-    if columns_to_append:
+    if 'geopoint' not in columns:
         index = columns.index(config['address_column'])
-        current_df = current_df.reindex(columns=columns[:index + 1] + columns_to_append + columns[index + 1:],
+        current_df = current_df.reindex(columns=columns[:index + 1] + ['geopoint'] + columns[index + 1:],
                                         copy=False)
     # Normal, 1 by 1 geocoding when batch is not enabled/available
     if not config['batch_enabled']:
-        current_df[config['latitude']], current_df[config['longitude']] = \
-            zip(*current_df.apply(perform_forward_geocode, axis=1, args=(config, geocode_function, cache)))
+        lat_long_tuple = current_df.apply(perform_forward_geocode, axis=1, args=(config, geocode_function, cache))
+        current_df['geopoint'] = ['POINT({} {})'.format(long, lat) for lat, long in lat_long_tuple]
 
     # Batch creation and geocoding otherwise
     else:
@@ -46,8 +45,7 @@ def add_forward_geocode_columns(cache, config, current_df, geocode_function):
                 else:
                     res = [row[config[c]] for c in ['latitude', 'longitude']]
 
-                current_df.loc[i, config['latitude']] = res[0]
-                current_df.loc[i, config['longitude']] = res[1]
+                current_df.loc[i, 'geopoint'] = 'POINT({} {})'.format(res[1], res[0])  # Create a geopoint from lat and long
             except (KeyError, IndexError):
                 batch.append((i, address))
 
