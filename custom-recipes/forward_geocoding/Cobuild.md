@@ -1,0 +1,4 @@
+- Always configure `output_ds`; the runner assumes this output exists even though the descriptor marks the role optional.
+- Always set `provider`; if it is not explicit, ask the user which one to use and mention any usable preset names to help them choose. Do not infer the provider from a preset name.
+- For a provider that requires authentication, prefer `use_preset=true` with a compatible preset. Set `use_preset=false` only when the user explicitly requests direct credentials.
+- The `api_key_preset` family is shared by several providers. If the available preset names do not clearly identify one for the selected provider, ask the user which preset to use; do not guess.

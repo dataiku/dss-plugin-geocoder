@@ -6,6 +6,9 @@
     },
     
     "kind" : "PYTHON",
+    "cobuild": {
+        "supported": true
+    },
     "selectableFromDataset":  "input_ds",
 
     "inputRoles" : [
