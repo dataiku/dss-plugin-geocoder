@@ -7,7 +7,9 @@
     
     "kind" : "PYTHON",
     "cobuild": {
-        "supported": true
+        "supported": true,
+        "description": "Forward geocodes address strings into coordinates and geocoding metadata. Some providers require credentials that must be configured in the recipe settings UI.",
+        "sensitivePlainParams": ["api_key", "here_app_id", "here_app_code", "google_client", "google_client_secret"]
     },
     "selectableFromDataset":  "input_ds",
 
