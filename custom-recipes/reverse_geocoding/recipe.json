@@ -7,8 +7,7 @@
     
     "kind" : "PYTHON",
     "cobuild": {
-        "supported": true,
-        "description": "Reverse geocodes latitude and longitude columns into readable address metadata. Some providers require provider-specific credentials."
+        "supported": true
     },
     "selectableFromDataset":  "input_ds",
 

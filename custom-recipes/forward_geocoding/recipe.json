@@ -7,8 +7,7 @@
     
     "kind" : "PYTHON",
     "cobuild": {
-        "supported": true,
-        "description": "Forward geocodes address strings into coordinates and geocoding metadata. Some providers require provider-specific credentials."
+        "supported": true
     },
     "selectableFromDataset":  "input_ds",
 
