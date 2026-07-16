@@ -19,8 +19,7 @@ Batch behavior:
 - Set `batch_size_bing` only when Bing batch mode is enabled.
 
 Credentials:
-- Some providers require credentials even though these fields are typed as strings.
+- Some providers require provider-specific credentials.
 - Use `api_key` for providers that expose the API key field.
 - Use `here_app_id` and `here_app_code` for `provider=here`.
 - Use `google_client` and `google_client_secret` only for Google premium-plan client credentials.
-- Do not ask the user to paste API keys or secrets in chat. If required credentials are not already known from a safe source, create the recipe skeleton, navigate to the recipe settings, and ask the user to fill them there.
