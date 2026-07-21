@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.4.0 - Enhancement release - 2026-07-20
+
+- Added supported Python versions: 3.12, 3.13, 3.14
+
 ## Version 1.3.1 - Minor release - 2024-01
 -  Change label for cache location parameter label for clarity
 
