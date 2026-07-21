@@ -17,7 +17,7 @@ def get_config_forward_geocoding(plugin_config, recipe_config):
     :return:
     """
     processed_config = {}
-    for param in ['address_column', 'cache_enabled', 'provider', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
+    for param in ['address_column', 'cache_enabled', 'provider', 'api_key', 'api_key_preset', 'google_geocoder_preset', 'here_geocoder_preset', 'use_preset', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
         processed_config[param] = recipe_config.get(param, None)
 
     if processed_config['provider'] is None:
@@ -70,7 +70,7 @@ def get_config_reverse_geocoding(plugin_config, recipe_config):
 
     processed_config = {}
 
-    for param in ['lat_column', 'lng_column', 'provider', 'cache_enabled', 'api_key', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
+    for param in ['lat_column', 'lng_column', 'provider', 'cache_enabled', 'api_key', 'api_key_preset', 'google_geocoder_preset', 'here_geocoder_preset', 'use_preset', 'here_app_id', 'here_app_code', 'google_client', 'google_client_secret']:
         processed_config[param] = recipe_config.get(param, None)
 
     if processed_config['provider'] is None:

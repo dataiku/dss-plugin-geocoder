@@ -56,15 +56,24 @@ def add_reverse_geocode_columns(cache, config, current_df, geocode_function):
 
 def get_reverse_geocode_function(config):
     provider_function = getattr(geocoder, config['provider'])
+    
+    use_preset = config.get('use_preset', False)
+    api_key = config.get('api_key', '')
+    here_config = { 'here_app_id': config['here_app_id'], 'here_app_code': config['here_app_code'] }
+    google_config = { 'api_key': config['api_key'], 'google_client': config['google_client'], 'google_client_secret': config['google_client_secret'] }
+    if use_preset:
+        api_key = config.get('api_key_preset', {}).get('api_key', '')
+        here_config = config.get('here_geocoder_preset', {})
+        google_config = config.get('google_geocoder_preset', {})
 
     if config['provider'] == 'here':
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', app_id=config['here_app_id'], app_code=config['here_app_code'])
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', app_id=here_config.get('here_app_id', ''), app_code=here_config.get('here_app_code', ''))
     elif config['provider'] == 'google':
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=config['api_key'], client=config['google_client'], client_secret=config['google_client_secret'])
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=google_config.get('api_key', ''), client=google_config.get('google_client', ''), client_secret=google_config.get('google_client_secret', ''))
     elif config['batch_enabled']:
-        return lambda locations: provider_function(locations, method='batch_reverse', key=config['api_key'])
+        return lambda locations: provider_function(locations, method='batch_reverse', key=api_key)
     else:
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=config['api_key'])
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=api_key)
 
 
 def perform_reverse_geocode(df, config, fun, cache):

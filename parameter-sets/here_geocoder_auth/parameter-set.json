@@ -1,0 +1,26 @@
+{
+    "meta" : {
+        "label": "Here Geocoder Auth Preset",
+        "description": "Here Geocoder Auth Preset",
+        "icon": "icon-map-marker"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+
+    "pluginParams": [],
+
+    "params": [
+        {
+            "name": "here_app_id",
+            "type": "STRING",
+            "label" : "HERE App ID",
+            "mandatory": true
+        }, 
+        {
+            "name": "here_app_code",
+            "type": "PASSWORD",
+            "label" : "HERE App Code",
+            "mandatory": true
+        }
+    ]
+}

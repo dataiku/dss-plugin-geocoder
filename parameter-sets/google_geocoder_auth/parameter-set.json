@@ -1,0 +1,32 @@
+{
+    "meta" : {
+        "label": "Google Geocoder Auth Preset",
+        "description": "Google Geocoder Auth Preset",
+        "icon": "icon-map-marker"
+    },
+    "defaultDefinableInline": true,
+    "defaultDefinableAtProjectLevel": true,
+
+    "pluginParams": [],
+
+    "params": [
+         {
+            "name": "api_key",
+            "label": "API key",
+            "type": "PASSWORD",
+            "mandatory": true
+        },
+        {
+            "name": "google_client",
+            "type": "STRING",
+            "label" : "Google client ID",
+            "description": "Only if using a premium plan - optional otherwise"
+        }, 
+        {
+            "name": "google_client_secret",
+            "type": "PASSWORD",
+            "label" : "Google secret",
+            "description": "Only if using a premium plan - optional otherwise"
+        }
+    ]
+}
