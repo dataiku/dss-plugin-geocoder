@@ -61,15 +61,24 @@ def get_forward_geocode_function(config):
     Handle authentication mechanism with respect to the chosen geocoding service provider `provider_function`
     """
     provider_function = getattr(geocoder, config['provider'])
+    
+    use_preset = config.get('use_preset', False)
+    api_key = config.get('api_key', '')
+    here_config = { 'here_app_id': config['here_app_id'], 'here_app_code': config['here_app_code'] }
+    google_config = { 'api_key': config['api_key'], 'google_client': config['google_client'], 'google_client_secret': config['google_client_secret'] }
+    if use_preset:
+        api_key = config.get('api_key_preset', {}).get('api_key', '')
+        here_config = config.get('here_geocoder_preset', {})
+        google_config = config.get('google_geocoder_preset', {})
 
     if config['provider'] == 'here':
-        return lambda address: provider_function(address, app_id=config['here_app_id'], app_code=config['here_app_code'])
+        return lambda address: provider_function(address, app_id=here_config.get('here_app_id', ''), app_code=here_config.get('here_app_code', ''))
     elif config['provider'] == 'google':
-        return lambda address: provider_function(address, key=config['api_key'], client=config['google_client'], client_secret=config['google_client_secret'])
+        return lambda address: provider_function(address, key=google_config.get('api_key', ''), client=google_config.get('google_client', ''), client_secret=google_config.get('google_client_secret', ''))
     elif config['batch_enabled']:
-        return lambda addresses: provider_function(addresses, key=config['api_key'], method='batch', timeout=config['batch_timeout'])
+        return lambda addresses: provider_function(addresses, key=api_key, method='batch', timeout=config['batch_timeout'])
     else:
-        return lambda address: provider_function(address, key=config['api_key'])
+        return lambda address: provider_function(address, key=api_key)
 
 
 def perform_forward_geocode(df, config, fun, cache):
