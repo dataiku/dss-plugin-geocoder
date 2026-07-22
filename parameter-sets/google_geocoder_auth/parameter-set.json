@@ -13,8 +13,7 @@
          {
             "name": "api_key",
             "label": "API key",
-            "type": "PASSWORD",
-            "mandatory": true
+            "type": "PASSWORD"
         },
         {
             "name": "google_client",
