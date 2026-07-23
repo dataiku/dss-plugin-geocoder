@@ -1,7 +1,7 @@
 {
     "meta" : {
         "label": "Here Geocoder Auth Preset",
-        "description": "Here Geocoder Auth Preset",
+        "description": "Authentication data for HERE provider",
         "icon": "icon-map-marker"
     },
     "defaultDefinableInline": true,

@@ -1,7 +1,7 @@
 {
     "meta" : {
         "label": "Google Geocoder Auth Preset",
-        "description": "Google Geocoder Auth Preset",
+        "description": "Authentication data for Google provider",
         "icon": "icon-map-marker"
     },
     "defaultDefinableInline": true,
