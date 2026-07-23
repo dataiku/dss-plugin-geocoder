@@ -1,7 +1,7 @@
 {
     "meta" : {
         "label": "Geocoder Api Key Preset",
-        "description": "Geocoder Api Key Preset",
+        "description": "Authentication key for providers: 'Baidu', 'Bing', 'CanadaPost', 'Gaode', 'Geonames', 'LocationIQ',  'Mapbox',  'MapQuest',  'OpenCage',  'Tamu',  'TomTom',  'What3Words'",
         "icon": "icon-key"
     },
     "defaultDefinableInline": true,
