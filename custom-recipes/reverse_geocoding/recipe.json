@@ -191,36 +191,65 @@
             "visibilityCondition" : "['baidu', 'bing', 'canadapost', 'gaode', 'geonames', 'google', 'here', 'locationiq',  'mapbox',  'mapquest',  'mapzen',  'opencage',  'tamu',  'tomtom',  'w3w'].indexOf(model.provider) >= 0"
         },
         {
+            "name": "use_preset",
+            "label" : "Use preset",
+            "type": "BOOLEAN",
+            "mandatory": false,
+            "description":"Get the authentication parameters from a shared configuration in DSS.",
+            "visibilityCondition" : "['baidu', 'bing', 'canadapost', 'gaode', 'geonames', 'google', 'here', 'locationiq',  'mapbox',  'mapquest',  'mapzen',  'opencage',  'tamu',  'tomtom',  'w3w'].indexOf(model.provider) >= 0"
+        },
+        {
+            "name": "api_key_preset",
+            "label": "Geocoder Api Key Preset",
+            "type": "PRESET",
+            "parameterSetId": "geocoder_api_key",
+            "visibilityCondition": "['baidu', 'bing', 'canadapost', 'gaode', 'geonames', 'locationiq',  'mapbox',  'mapquest',  'mapzen',  'opencage',  'tamu',  'tomtom',  'w3w'].indexOf(model.provider) >= 0 && model.use_preset == true"
+        },
+        {
+            "name": "google_geocoder_preset",
+            "label": "Geocoder Api Key Preset",
+            "type": "PRESET",
+            "parameterSetId": "google_geocoder_auth",
+            "visibilityCondition": "model.provider === 'google' && model.use_preset == true"
+        },
+        {
+            "name": "here_geocoder_preset",
+            "label": "Geocoder Api Key Preset",
+            "type": "PRESET",
+            "parameterSetId": "here_geocoder_auth",
+            "visibilityCondition": "model.provider === 'here' && model.use_preset == true"
+        },
+        {
             "name": "api_key",
-            "type": "STRING",
+            "type": "PASSWORD",
             "label" : "API key",
-            "visibilityCondition" : "['baidu', 'bing', 'canadapost', 'gaode', 'geonames', 'google', 'locationiq',  'mapbox',  'mapquest',  'mapzen',  'opencage',  'tamu',  'tomtom',  'w3w'].indexOf(model.provider) >= 0"
+            "visibilityCondition" : "['baidu', 'bing', 'canadapost', 'gaode', 'geonames', 'google', 'locationiq',  'mapbox',  'mapquest',  'mapzen',  'opencage',  'tamu',  'tomtom',  'w3w'].indexOf(model.provider) >= 0 && model.use_preset == false"
         },
         {
             "name": "here_app_id",
             "type": "STRING",
             "label" : "HERE App ID",
-            "visibilityCondition" : "model.provider === 'here'"
+            "visibilityCondition" : "model.provider === 'here' && model.use_preset == false"
         }, 
         {
             "name": "here_app_code",
-            "type": "STRING",
+            "type": "PASSWORD",
             "label" : "HERE App Code",
-            "visibilityCondition" : "model.provider === 'here'"
+            "visibilityCondition" : "model.provider === 'here' && model.use_preset == false"
         },
         {
             "name": "google_client",
             "type": "STRING",
             "label" : "Google client ID",
             "description": "Only if using a premium plan - optional otherwise",
-            "visibilityCondition" : "model.provider === 'google'"
+            "visibilityCondition" : "model.provider === 'google' && model.use_preset == false"
         }, 
         {
             "name": "google_client_secret",
-            "type": "STRING",
+            "type": "PASSWORD",
             "label" : "Google secret",
             "description": "Only if using a premium plan - optional otherwise",
-            "visibilityCondition" : "model.provider === 'google'"
+            "visibilityCondition" : "model.provider === 'google' && model.use_preset == false"
         }
     ],
 

@@ -55,16 +55,26 @@ def add_reverse_geocode_columns(cache, config, current_df, geocode_function):
 
 
 def get_reverse_geocode_function(config):
-    provider_function = getattr(geocoder, config['provider'])
-
-    if config['provider'] == 'here':
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', app_id=config['here_app_id'], app_code=config['here_app_code'])
-    elif config['provider'] == 'google':
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=config['api_key'], client=config['google_client'], client_secret=config['google_client_secret'])
-    elif config['batch_enabled']:
-        return lambda locations: provider_function(locations, method='batch_reverse', key=config['api_key'])
+    provider = config['provider']
+    provider_function = getattr(geocoder, provider)
+    use_preset = config.get('use_preset', False)
+    if use_preset:
+        preset_name = {
+            'google': 'google_geocoder_preset',
+            'here': 'here_geocoder_preset'
+        }.get(provider, 'api_key_preset')
+        authentication_config = config.get(preset_name) or {}
     else:
-        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=config['api_key'])
+        authentication_config = config
+
+    if provider == 'here':
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', app_id=authentication_config.get('here_app_id', ''), app_code=authentication_config.get('here_app_code', ''))
+    elif provider == 'google':
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=authentication_config.get('api_key', ''), client=authentication_config.get('google_client', ''), client_secret=authentication_config.get('google_client_secret', ''))
+    elif config['batch_enabled']:
+        return lambda locations: provider_function(locations, method='batch_reverse', key=authentication_config.get('api_key', ''))
+    else:
+        return lambda lat, lng: provider_function([lat, lng], method='reverse', key=authentication_config.get('api_key', ''))
 
 
 def perform_reverse_geocode(df, config, fun, cache):

@@ -60,16 +60,26 @@ def get_forward_geocode_function(config):
     """
     Handle authentication mechanism with respect to the chosen geocoding service provider `provider_function`
     """
-    provider_function = getattr(geocoder, config['provider'])
-
-    if config['provider'] == 'here':
-        return lambda address: provider_function(address, app_id=config['here_app_id'], app_code=config['here_app_code'])
-    elif config['provider'] == 'google':
-        return lambda address: provider_function(address, key=config['api_key'], client=config['google_client'], client_secret=config['google_client_secret'])
-    elif config['batch_enabled']:
-        return lambda addresses: provider_function(addresses, key=config['api_key'], method='batch', timeout=config['batch_timeout'])
+    provider = config['provider']
+    provider_function = getattr(geocoder, provider)
+    use_preset = config.get('use_preset', False)
+    if use_preset:
+        preset_name = {
+            'google': 'google_geocoder_preset',
+            'here': 'here_geocoder_preset'
+        }.get(provider, 'api_key_preset')
+        authentication_config = config.get(preset_name) or {}
     else:
-        return lambda address: provider_function(address, key=config['api_key'])
+        authentication_config = config
+
+    if provider == 'here':
+        return lambda address: provider_function(address, app_id=authentication_config.get('here_app_id', ''), app_code=authentication_config.get('here_app_code', ''))
+    elif provider == 'google':
+        return lambda address: provider_function(address, key=authentication_config.get('api_key', ''), client=authentication_config.get('google_client', ''), client_secret=authentication_config.get('google_client_secret', ''))
+    elif config['batch_enabled']:
+        return lambda addresses: provider_function(addresses, key=authentication_config.get('api_key', ''), method='batch', timeout=config['batch_timeout'])
+    else:
+        return lambda address: provider_function(address, key=authentication_config.get('api_key', ''))
 
 
 def perform_forward_geocode(df, config, fun, cache):
