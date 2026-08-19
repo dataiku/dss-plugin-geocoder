@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 1.4.0 - Features release - 2026-08
+- Mark the HERE provider as obsolete
+- Add shared authentication presets and store sensitive credentials as password fields
+- Add Cobuild support for forward and reverse geocoding recipes
+
 ## Version 1.3.1 - Minor release - 2024-01
 -  Change label for cache location parameter label for clarity
 
