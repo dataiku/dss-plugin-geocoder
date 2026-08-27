@@ -4,6 +4,7 @@
 
 - Added supported Python versions: 3.12, 3.13, 3.14
 - Fixes dependency issue with setuptools<82.0.0
+- Makefile cleanup: removes release_info.json
 
 ## Version 1.4.0 - Features release - 2026-08
 - Mark the HERE provider as obsolete
