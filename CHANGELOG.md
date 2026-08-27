@@ -3,6 +3,7 @@
 ## Version 1.5.0 - Enhancement release - 2026-08-27
 
 - Added supported Python versions: 3.12, 3.13, 3.14
+- Fixes dependency issue with setuptools<82.0.0
 
 ## Version 1.4.0 - Features release - 2026-08
 - Mark the HERE provider as obsolete
