@@ -1,14 +1,27 @@
 # -*- coding: utf-8 -*-
-
-import os
 import pandas as pd
 import pytest
-import shutil
 import time
+from types import SimpleNamespace
 
 from cache_handler import CacheHandler
 from dataframe_reverse_geocoding import add_reverse_geocode_columns, get_reverse_geocode_function
 from dku_io import get_config_reverse_geocoding
+
+
+@pytest.fixture(autouse=True)
+def mock_reverse_geocoder(monkeypatch):
+    response = SimpleNamespace(address='123 Test St', city='Brooklyn',
+                               postal='11218', state='New York',
+                               country='United States')
+
+    def fake_geocoder(*args):
+        return [response for _ in args[0]] if len(args) == 1 else response
+
+    monkeypatch.setattr(
+        __import__(__name__), 'get_reverse_geocode_function',
+        lambda config: fake_geocoder,
+    )
 
 
 def test_no_cache_small_dataset():
