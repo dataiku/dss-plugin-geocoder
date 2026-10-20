@@ -59,6 +59,7 @@ unit.xml
 .pytest_cache/
 cover/
 tests/allure_report
+tmp/
 
 # Translations
 *.mo

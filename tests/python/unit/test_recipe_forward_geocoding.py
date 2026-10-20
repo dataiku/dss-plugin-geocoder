@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os
 import pandas as pd
-import shutil
+from types import SimpleNamespace
 
 from cache_handler import CacheHandler
-from dataframe_forward_geocoding import add_forward_geocode_columns, get_forward_geocode_function
+from dataframe_forward_geocoding import add_forward_geocode_columns
 from dku_io import get_config_forward_geocoding
 
 # Retrieve configuration
@@ -17,7 +16,9 @@ def test_no_cache_small_dataset():
     recipe_config = {'cache_enabled': True, 'batch_enabled': True, 'batch_size_bing': 50, 'batch_size_uscensus': 1000, 'column_prefix': 'geo_', 'address_column': 'geo_address', 'provider': 'osm'}
 
     config = get_config_forward_geocoding(recipe_config=recipe_config, plugin_config=plugin_config)
-    geocode_function = get_forward_geocode_function(config)
+    response = SimpleNamespace(lat=48.84444, lng=2.371837,
+                               latlng=(48.84444, 2.371837))
+    geocode_function = lambda _: response
 
     with CacheHandler(config['cache_location'], enabled=config['cache_enabled'], size_limit=config['cache_size'], eviction_policy=config['cache_eviction']) as cache:
 

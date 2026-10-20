@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from cache_handler import CacheHandler
-from dataframe_reverse_geocoding import add_reverse_geocode_columns, get_reverse_geocode_function
+from dataframe_reverse_geocoding import add_reverse_geocode_columns
 import pandas as pd
+from types import SimpleNamespace
 
 
 def test_reverse_geocoding_processor():
@@ -31,7 +32,10 @@ def test_reverse_geocoding_processor():
     config = config
     current_df = pd.DataFrame({'latitude': [40.64749, 40.75362, 40.80902], 'longitude': [-73.97237, -73.98377, -73.94190]})
     assert 'geo_city' not in current_df.columns
-    geocode_function = get_reverse_geocode_function(config)
+    geocode_function = lambda *_: SimpleNamespace(
+        address='123 Test St', city='Brooklyn', postal='11218',
+        state='New York', country='United States'
+    )
     current_df = add_reverse_geocode_columns(cache, config, current_df, geocode_function)
     assert 'geo_city' in current_df.columns
     assert current_df.iloc[0]['geo_country'] in ['United States of America', 'United States']
